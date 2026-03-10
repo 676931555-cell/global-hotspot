@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>全球热点 · 每日速览</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #07070f;
+      --surface:     #10101e;
+      --surface-h:   #18182c;
+      --surface-2:   #1c1c30;
+      --border:      rgba(255,255,255,0.07);
+      --accent:      #818cf8;
+      --accent-glow: rgba(129,140,248,0.16);
+      --text:        #e2e5ff;
+      --text-sub:    #8b90b8;
+      --text-muted:  #50546e;
+      --amber:       #fbbf24;
+      --green:       #34d399;
+      --red:         #f87171;
+    }
+    [data-theme="light"] {
+      --bg:          #f0f2ff;
+      --surface:     #ffffff;
+      --surface-h:   #f7f8ff;
+      --surface-2:   #eef0ff;
+      --border:      rgba(0,0,0,0.07);
+      --accent:      #6366f1;
+      --accent-glow: rgba(99,102,241,0.12);
+      --text:        #1a1b30;
+      --text-sub:    #5a5e80;
+      --text-muted:  #9095b0;
+      --amber:       #d97706;
+      --green:       #059669;
+      --red:         #dc2626;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+                   'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background .3s, color .3s;
+    }
+
+    /* ── Header ── */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(14px);
+    }
+    .header-inner {
+      max-width: 1400px; margin: 0 auto; padding: 0 20px;
+      height: 60px; display: flex; align-items: center; gap: 14px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 9px;
+      font-size: 1.05rem; font-weight: 700; color: var(--accent);
+      white-space: nowrap; text-decoration: none;
+    }
+    .logo-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: var(--accent-glow);
+      display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+    }
+    .header-date { flex: 1; text-align: center; color: var(--text-sub); font-size: 0.82rem; }
+    .header-actions { display: flex; gap: 8px; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 13px; border-radius: 8px; font-size: 0.83rem;
+      border: 1px solid var(--border); background: var(--surface-2);
+      color: var(--text-sub); cursor: pointer; transition: all .2s; white-space: nowrap;
+    }
+    .btn:hover { background: var(--accent-glow); color: var(--accent); border-color: var(--accent); }
+    .btn svg { flex-shrink: 0; }
+    .btn.spin svg { animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Main ── */
+    .main { max-width: 1400px; margin: 0 auto; padding: 22px 20px 40px; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+      padding-bottom: 2px; margin-bottom: 20px;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+      padding: 7px 16px; border-radius: 10px; font-size: 0.88rem;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--text-sub); cursor: pointer; transition: all .2s; white-space: nowrap;
+    }
+    .tab:hover { background: var(--surface-h); color: var(--text); }
+    .tab.active {
+      background: var(--accent-glow); border-color: var(--accent);
+      color: var(--accent); font-weight: 600;
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 16px; font-size: 0.8rem; color: var(--text-muted);
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 6px var(--green);
+      animation: pulse 2s infinite; flex-shrink: 0;
+    }
+    .dot.loading { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+    .dot.error   { background: var(--red);   box-shadow: 0 0 6px var(--red); animation: none; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* ── Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 14px;
+    }
+
+    /* ── Card ── */
+    .card {
+      display: flex; flex-direction: column; gap: 11px;
+      padding: 18px 20px; border-radius: 14px;
+      border: 1px solid var(--border); background: var(--surface);
+      text-decoration: none; color: inherit;
+      transition: all .2s; position: relative; overflow: hidden;
+    }
+    .card::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: 0;
+      height: 2px; background: var(--accent); opacity: 0; transition: opacity .2s;
+    }
+    .card:hover {
+      background: var(--surface-h); border-color: var(--accent);
+      transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .card:hover::after { opacity: 1; }
+    .card-top { display: flex; align-items: center; gap: 8px; }
+    .card-rank {
+      font-size: 0.7rem; font-weight: 800; color: var(--text-muted);
+      width: 20px; text-align: center; flex-shrink: 0;
+    }
+    .card-src {
+      background: var(--accent-glow); color: var(--accent);
+      padding: 2px 8px; border-radius: 5px; font-size: 0.73rem; font-weight: 600;
+      max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .card-time { margin-left: auto; font-size: 0.73rem; color: var(--text-muted); white-space: nowrap; }
+    .card-title {
+      font-size: 0.97rem; font-weight: 600; line-height: 1.55; color: var(--text);
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .card-footer {
+      display: flex; align-items: center; gap: 14px;
+      font-size: 0.78rem; color: var(--text-muted); margin-top: auto;
+    }
+    .read-btn {
+      margin-left: auto; padding: 4px 11px; border-radius: 6px; font-size: 0.78rem;
+      border: 1px solid var(--border); color: var(--accent);
+      background: var(--accent-glow); transition: all .2s; white-space: nowrap;
+    }
+    .card:hover .read-btn { border-color: var(--accent); }
+
+    /* ── Skeleton ── */
+    .skeleton {
+      display: flex; flex-direction: column; gap: 11px;
+      padding: 18px 20px; border-radius: 14px;
+      border: 1px solid var(--border); background: var(--surface);
+    }
+    .skel {
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-h) 50%, var(--surface-2) 75%);
+      background-size: 300% 100%; animation: shimmer 1.6s infinite;
+    }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* ── Error / Notice ── */
+    .msg-box {
+      grid-column: 1/-1; text-align: center; padding: 40px 24px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    }
+    .msg-box h3 { font-size: 1.1rem; margin-bottom: 10px; }
+    .msg-box h3.err { color: var(--red); }
+    .msg-box p { color: var(--text-sub); font-size: 0.88rem; margin-top: 6px; line-height: 1.7; }
+    .msg-box .btn { margin: 16px auto 0; }
+
+    /* ── Source badges in footer ── */
+    .src-pills {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px;
+    }
+    .src-pill {
+      font-size: 0.72rem; padding: 2px 9px; border-radius: 20px;
+      background: var(--surface-2); color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .src-pill.ok  { color: var(--green);  border-color: rgba(52,211,153,.3); background: rgba(52,211,153,.08); }
+    .src-pill.err { color: var(--red);    border-color: rgba(248,113,113,.3); background: rgba(248,113,113,.08); }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center; padding: 28px 20px; color: var(--text-muted);
+      font-size: 0.78rem; border-top: 1px solid var(--border); margin-top: 40px;
+    }
+
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+      .header-date { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">🌐</div>
+      全球热点
+    </div>
+    <div class="header-date" id="dateDisplay"></div>
+    <div class="header-actions">
+      <button class="btn" id="refreshBtn" onclick="refreshCurrent()">
+        <svg id="ri" width="13" height="13" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        刷新
+      </button>
+      <button class="btn" onclick="toggleTheme()" title="切换主题">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="tabs" id="tabs"></div>
+  <div class="status-bar">
+    <div class="dot" id="statusDot"></div>
+    <span id="statusText">就绪</span>
+  </div>
+  <div id="srcPills" class="src-pills"></div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer class="footer">
+  数据来源：BBC · DW · Al Jazeera · TechCrunch · ScienceDaily 等 RSS 订阅
+  &nbsp;·&nbsp; 缓存 1 小时 &nbsp;·&nbsp; 仅展示公开信息
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   分类 & RSS 源配置
+   每个 feed 包含 { name, url }
+══════════════════════════════════════════════════════ */
+const CATS = [
+  {
+    id: 'world', name: '国际新闻', icon: '🌍',
+    feeds: [
+      { name: 'BBC World',      url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
+      { name: 'Deutsche Welle', url: 'https://rss.dw.com/xml/rss-en-world' },
+      { name: 'Al Jazeera',     url: 'https://www.aljazeera.com/xml/rss/all.xml' },
+    ],
+  },
+  {
+    id: 'tech', name: '科技', icon: '💻',
+    feeds: [
+      { name: 'TechCrunch',   url: 'https://techcrunch.com/feed/' },
+      { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index' },
+      { name: 'The Verge',    url: 'https://www.theverge.com/rss/index.xml' },
+      { name: 'Hacker News',  url: 'https://news.ycombinator.com/rss' },
+    ],
+  },
+  {
+    id: 'science', name: '科学', icon: '🔬',
+    feeds: [
+      { name: 'ScienceDaily',  url: 'https://www.sciencedaily.com/rss/top/science.xml' },
+      { name: 'BBC Science',   url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml' },
+      { name: 'New Scientist', url: 'https://www.newscientist.com/feed/home/' },
+    ],
+  },
+  {
+    id: 'business', name: '财经', icon: '📊',
+    feeds: [
+      { name: 'BBC Business',  url: 'https://feeds.bbci.co.uk/news/business/rss.xml' },
+      { name: 'Reuters Biz',   url: 'https://feeds.reuters.com/reuters/businessNews' },
+      { name: 'MarketWatch',   url: 'https://feeds.marketwatch.com/marketwatch/topstories/' },
+    ],
+  },
+  {
+    id: 'geo', name: '地缘政治', icon: '🗺️',
+    feeds: [
+      { name: 'Al Jazeera',      url: 'https://www.aljazeera.com/xml/rss/all.xml' },
+      { name: 'Guardian World',  url: 'https://www.theguardian.com/world/rss' },
+      { name: 'Foreign Affairs', url: 'https://www.foreignaffairs.com/rss.xml' },
+    ],
+  },
+  {
+    id: 'env', name: '环境气候', icon: '🌿',
+    feeds: [
+      { name: 'BBC Sci&Env',     url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml' },
+      { name: 'Guardian Env',    url: 'https://www.theguardian.com/environment/rss' },
+      { name: 'Climate Home',    url: 'https://www.climatechangenews.com/feed/' },
+    ],
+  },
+];
+
+/* ══════════════════════════════════════════════════════
+   代理链：依次尝试，任意一个成功即止
+══════════════════════════════════════════════════════ */
+const PROXIES = [
+  // rss2json.com: 将 RSS 转为 JSON，无需自己解析 XML
+  (url) => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=12`,
+  // allorigins: 通用 CORS 代理，返回原始 XML
+  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  // corsproxy.io: 另一个 CORS 代理
+  (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+];
+
+/* ══════════════════════════════════════════════════════
+   全局状态
+══════════════════════════════════════════════════════ */
+let activeCat = CATS[0].id;
+
+/* ══════════════════════════════════════════════════════
+   初始化
+══════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  const now = new Date();
+  document.getElementById('dateDisplay').textContent =
+    now.toLocaleDateString('zh-CN', {
+      year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
+    });
+
+  const saved = localStorage.getItem('hotspot_theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+
+  renderTabs();
+  loadCat(activeCat);
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) autoRefreshCheck();
+  });
+});
+
+/* ══════════════════════════════════════════════════════
+   Tabs
+══════════════════════════════════════════════════════ */
+function renderTabs() {
+  document.getElementById('tabs').innerHTML = CATS.map(c => `
+    <button class="tab ${c.id === activeCat ? 'active' : ''}" onclick="switchCat('${c.id}')">
+      ${c.icon} ${c.name}
+    </button>
+  `).join('');
+}
+
+function switchCat(id) {
+  activeCat = id;
+  renderTabs();
+  loadCat(id);
+}
+
+/* ══════════════════════════════════════════════════════
+   加载分类数据
+══════════════════════════════════════════════════════ */
+async function loadCat(id, force = false) {
+  const cat = CATS.find(c => c.id === id);
+  const cacheKey = 'hotspot_v2_' + id;
+
+  // 读缓存（1 小时有效）
+  if (!force) {
+    const raw = localStorage.getItem(cacheKey);
+    if (raw) {
+      try {
+        const { data, ts, srcLog } = JSON.parse(raw);
+        if (Date.now() - ts < 3_600_000) {
+          renderCards(data);
+          renderSrcPills(srcLog);
+          setStatus('ok', `缓存中 · ${timeAgo(ts)} · ${data.length} 条`);
+          return;
+        }
+      } catch { /* 缓存损坏，继续重新拉取 */ }
+    }
+  }
+
+  showSkeletons();
+  setStatus('loading', `正在拉取 ${cat.feeds.length} 个数据源…`);
+  document.getElementById('srcPills').innerHTML = '';
+
+  // 并发拉取所有 feed
+  const results = await Promise.allSettled(
+    cat.feeds.map(feed => fetchFeed(feed))
+  );
+
+  const srcLog = [];
+  let allItems = [];
+
+  results.forEach((r, i) => {
+    const feed = cat.feeds[i];
+    if (r.status === 'fulfilled' && r.value.length) {
+      allItems = allItems.concat(r.value);
+      srcLog.push({ name: feed.name, ok: true, count: r.value.length });
+    } else {
+      srcLog.push({ name: feed.name, ok: false,
+        err: r.reason?.message || r.value?.length === 0 ? '无数据' : '失败' });
+    }
+  });
+
+  if (!allItems.length) {
+    const errDetail = results
+      .filter(r => r.status === 'rejected')
+      .map(r => r.reason?.message).join(' | ');
+    showError(errDetail || '所有数据源均无法访问');
+    setStatus('error', '全部数据源获取失败');
+    renderSrcPills(srcLog);
+    return;
+  }
+
+  // 去重 + 按时间排序 + 编号
+  const seen = new Set();
+  const deduped = allItems
+    .filter(i => { if (seen.has(i.url)) return false; seen.add(i.url); return true; })
+    .sort((a, b) => b.ts - a.ts)
+    .slice(0, 20)
+    .map((item, idx) => ({ ...item, rank: idx + 1 }));
+
+  localStorage.setItem(cacheKey, JSON.stringify({ data: deduped, ts: Date.now(), srcLog }));
+  renderCards(deduped);
+  renderSrcPills(srcLog);
+  const okCount = srcLog.filter(s => s.ok).length;
+  setStatus('ok', `已更新 · ${okCount}/${cat.feeds.length} 个源成功 · ${deduped.length} 条`);
+}
+
+/* ══════════════════════════════════════════════════════
+   核心：抓取单个 Feed（代理链 + 双格式解析）
+══════════════════════════════════════════════════════ */
+async function fetchFeed(feed) {
+  const errors = [];
+
+  // 1️⃣ 尝试 rss2json.com（返回 JSON，最简单）
+  try {
+    const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}&count=12`;
+    const res = await withTimeout(fetch(url), 9000);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message || 'rss2json error');
+    const items = (data.items || []).map(item => ({
+      title: cleanText(item.title),
+      url:   safeUrl(item.link),
+      ts:    item.pubDate ? new Date(item.pubDate).getTime() : Date.now(),
+      source: cleanText(data.feed?.title || feed.name),
+    })).filter(i => i.title && i.url !== '#');
+    if (items.length) return items;
+    throw new Error('无条目');
+  } catch (e) { errors.push('rss2json: ' + e.message); }
+
+  // 2️⃣ 尝试 allorigins（返回原始 XML）
+  try {
+    const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(feed.url)}`;
+    const res = await withTimeout(fetch(url), 10000);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const xml = await res.text();
+    const items = parseXML(xml, feed.name);
+    if (items.length) return items;
+    throw new Error('XML 解析无结果');
+  } catch (e) { errors.push('allorigins: ' + e.message); }
+
+  // 3️⃣ 尝试 corsproxy.io
+  try {
+    const url = `https://corsproxy.io/?${encodeURIComponent(feed.url)}`;
+    const res = await withTimeout(fetch(url), 10000);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const xml = await res.text();
+    const items = parseXML(xml, feed.name);
+    if (items.length) return items;
+    throw new Error('XML 解析无结果');
+  } catch (e) { errors.push('corsproxy: ' + e.message); }
+
+  throw new Error(errors.join(' / '));
+}
+
+/* ── 客户端 XML 解析（RSS 2.0 + Atom） ── */
+function parseXML(xmlText, feedName) {
+  let doc;
+  try { doc = new DOMParser().parseFromString(xmlText, 'application/xml'); }
+  catch { return []; }
+  if (doc.querySelector('parsererror')) return [];
+
+  const isAtom = !!doc.querySelector('feed');
+  const nodes = [...doc.querySelectorAll(isAtom ? 'entry' : 'item')];
+  const channelTitle = cleanText(
+    doc.querySelector(isAtom ? 'feed > title' : 'channel > title')?.textContent
+  ) || feedName;
+
+  return nodes.slice(0, 12).map(node => {
+    const title = cleanText(node.querySelector('title')?.textContent);
+    let link = '';
+    if (isAtom) {
+      link = node.querySelector('link[rel="alternate"]')?.getAttribute('href')
+          || node.querySelector('link:not([rel])')?.getAttribute('href')
+          || node.querySelector('link')?.getAttribute('href')
+          || node.querySelector('id')?.textContent
+          || '';
+    } else {
+      link = node.querySelector('link')?.textContent?.trim()
+          || node.querySelector('link')?.getAttribute('href')
+          || node.querySelector('guid')?.textContent
+          || '';
+    }
+    const dateRaw = node.querySelector('pubDate, published, updated, dc\\:date')?.textContent;
+    return {
+      title,
+      url:    safeUrl(link),
+      ts:     dateRaw ? new Date(dateRaw).getTime() : Date.now(),
+      source: channelTitle,
+    };
+  }).filter(i => i.title && i.url !== '#');
+}
+
+/* ══════════════════════════════════════════════════════
+   渲染
+══════════════════════════════════════════════════════ */
+function renderCards(items) {
+  if (!items?.length) {
+    document.getElementById('grid').innerHTML =
+      `<div class="msg-box"><h3>暂无数据</h3><p>该分类暂时没有可用内容，请稍后重试。</p></div>`;
+    return;
+  }
+  document.getElementById('grid').innerHTML = items.map(item => `
+    <a class="card" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
+      <div class="card-top">
+        <span class="card-rank">#${item.rank}</span>
+        <span class="card-src">${escHtml(item.source)}</span>
+        <span class="card-time">${timeAgo(item.ts)}</span>
+      </div>
+      <div class="card-title">${escHtml(item.title)}</div>
+      <div class="card-footer">
+        <span style="color:var(--text-muted);font-size:.78rem">
+          ${new Date(item.ts).toLocaleDateString('zh-CN')}
+        </span>
+        <span class="read-btn">阅读原文 →</span>
+      </div>
+    </a>
+  `).join('');
+}
+
+function renderSrcPills(srcLog) {
+  if (!srcLog?.length) return;
+  document.getElementById('srcPills').innerHTML = srcLog.map(s => `
+    <span class="src-pill ${s.ok ? 'ok' : 'err'}"
+          title="${s.ok ? `✓ ${s.count} 条` : '✗ ' + (s.err || '失败')}">
+      ${s.ok ? '✓' : '✗'} ${escHtml(s.name)}${s.ok ? ` (${s.count})` : ''}
+    </span>
+  `).join('');
+}
+
+function showSkeletons() {
+  document.getElementById('grid').innerHTML = Array(12).fill(0).map(() => `
+    <div class="skeleton">
+      <div class="skel" style="height:12px;width:45%"></div>
+      <div class="skel" style="height:18px;width:90%"></div>
+      <div class="skel" style="height:18px;width:75%"></div>
+      <div class="skel" style="height:12px;width:40%"></div>
+    </div>
+  `).join('');
+}
+
+function showError(msg) {
+  document.getElementById('grid').innerHTML = `
+    <div class="msg-box">
+      <h3 class="err">获取失败</h3>
+      <p>${escHtml(msg)}</p>
+      <p>
+        <strong>可能原因：</strong>网络环境限制了对外部接口的访问。<br>
+        建议：开启 VPN 后刷新，或检查 rss2json.com / allorigins.win 是否可访问。
+      </p>
+      <button class="btn" onclick="refreshCurrent()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        重新尝试
+      </button>
+    </div>
+  `;
+}
+
+/* ══════════════════════════════════════════════════════
+   操作
+══════════════════════════════════════════════════════ */
+async function refreshCurrent() {
+  localStorage.removeItem('hotspot_v2_' + activeCat);
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spin');
+  await loadCat(activeCat, true);
+  btn.classList.remove('spin');
+}
+
+function autoRefreshCheck() {
+  const raw = localStorage.getItem('hotspot_v2_' + activeCat);
+  if (!raw) { loadCat(activeCat); return; }
+  try {
+    const { ts } = JSON.parse(raw);
+    if (Date.now() - ts > 3_600_000) loadCat(activeCat);
+  } catch { loadCat(activeCat); }
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('hotspot_theme', next);
+}
+
+function setStatus(type, text) {
+  document.getElementById('statusDot').className =
+    'dot' + (type === 'loading' ? ' loading' : type === 'error' ? ' error' : '');
+  document.getElementById('statusText').textContent = text;
+}
+
+/* ══════════════════════════════════════════════════════
+   工具函数
+══════════════════════════════════════════════════════ */
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('请求超时')), ms)),
+  ]);
+}
+
+function safeUrl(url) {
+  if (!url || typeof url !== 'string') return '#';
+  const u = url.trim();
+  try {
+    const parsed = new URL(u.startsWith('http') ? u : 'https://' + u);
+    return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? u : '#';
+  } catch { return '#'; }
+}
+
+function cleanText(s) {
+  if (!s) return '';
+  return s.replace(/<[^>]*>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<')
+          .replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'")
+          .replace(/&nbsp;/g,' ').trim();
+}
+
+function escHtml(s) {
+  return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function esc(s) { return (s ?? '#').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function timeAgo(ts) {
+  const d = Date.now() - ts;
+  const m = Math.floor(d / 60000);
+  const h = Math.floor(d / 3600000);
+  const dy = Math.floor(d / 86400000);
+  if (m < 1)  return '刚刚';
+  if (m < 60) return `${m} 分钟前`;
+  if (h < 24) return `${h} 小时前`;
+  return `${dy} 天前`;
+}
+</script>
+</body>
+</html>
